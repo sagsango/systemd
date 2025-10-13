@@ -40,6 +40,10 @@ static int add_invocation(sd_journal *j) {
         return sd_journal_add_conjunction(j);
 }
 
+/*
+ * XXX:
+ *  -k flag add this
+ */
 static int add_boot(sd_journal *j) {
         int r;
 
@@ -57,6 +61,10 @@ static int add_boot(sd_journal *j) {
         return sd_journal_add_conjunction(j);
 }
 
+/*
+ * XXX:
+ *  -k flag add this
+ */
 static int add_dmesg(sd_journal *j) {
         int r;
 
@@ -65,6 +73,10 @@ static int add_dmesg(sd_journal *j) {
         if (!arg_dmesg)
                 return 0;
 
+        /*
+         * XXX:
+         *  Seems like they are just addeding filters
+         */
         r = sd_journal_add_match(j, "_TRANSPORT=kernel", SIZE_MAX);
         if (r < 0)
                 return r;
@@ -72,6 +84,12 @@ static int add_dmesg(sd_journal *j) {
         return sd_journal_add_conjunction(j);
 }
 
+/*
+ *
+ * XXX:
+ *  This was also got called when we use -k flag
+ *  Seems, Units define resources, services, sockets, devices, mounts, timers, targets, etc. Each unit has a type and usually a name ending in a type-specific suffix.
+ */
 static int add_units(sd_journal *j) {
         _cleanup_strv_free_ char **patterns = NULL;
         bool added = false;

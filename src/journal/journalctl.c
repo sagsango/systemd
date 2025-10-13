@@ -48,6 +48,10 @@ JournalctlAction arg_action = ACTION_SHOW;
 OutputMode arg_output = OUTPUT_SHORT;
 sd_json_format_flags_t arg_json_format_flags = SD_JSON_FORMAT_OFF;
 PagerFlags arg_pager_flags = 0;
+/*
+ * XXX:
+ *  What type of journal logs to add based on arg & these arg_flags
+ */
 bool arg_utc = false;
 bool arg_follow = false;
 bool arg_full = true;
@@ -324,6 +328,10 @@ static int help(void) {
         return 0;
 }
 
+/*
+ * XXX:
+ *  Passing args to journalct -k
+ */
 static int parse_argv(int argc, char *argv[]) {
 
         enum {
@@ -393,9 +401,9 @@ static int parse_argv(int argc, char *argv[]) {
                 { "merge",                no_argument,       NULL, 'm'                      },
                 { "this-boot",            no_argument,       NULL, ARG_THIS_BOOT            }, /* deprecated */
                 { "boot",                 optional_argument, NULL, 'b'                      },
-                { "list-boots",           no_argument,       NULL, ARG_LIST_BOOTS           },
+                { "list-boots",           no_argument,       NULL, ARG_LIST_BOOTS           }, /* XXX: journalctl --list-boots */
                 { "list-invocations",     no_argument,       NULL, ARG_LIST_INVOCATIONS     },
-                { "dmesg",                no_argument,       NULL, 'k'                      },
+                { "dmesg",                no_argument,       NULL, 'k'                      }, /* XXX: kernel logs */
                 { "system",               no_argument,       NULL, ARG_SYSTEM               },
                 { "user",                 no_argument,       NULL, ARG_USER                 },
                 { "directory",            required_argument, NULL, 'D'                      },
@@ -414,7 +422,7 @@ static int parse_argv(int argc, char *argv[]) {
                 { "interval",             required_argument, NULL, ARG_INTERVAL             },
                 { "verify",               no_argument,       NULL, ARG_VERIFY               },
                 { "verify-key",           required_argument, NULL, ARG_VERIFY_KEY           },
-                { "disk-usage",           no_argument,       NULL, ARG_DISK_USAGE           },
+                { "disk-usage",           no_argument,       NULL, ARG_DISK_USAGE           }, /* XXX: disk-usage */
                 { "cursor",               required_argument, NULL, 'c'                      },
                 { "cursor-file",          required_argument, NULL, ARG_CURSOR_FILE          },
                 { "after-cursor",         required_argument, NULL, ARG_AFTER_CURSOR         },
@@ -437,7 +445,7 @@ static int parse_argv(int argc, char *argv[]) {
                 { "relinquish-var",       no_argument,       NULL, ARG_RELINQUISH_VAR       },
                 { "smart-relinquish-var", no_argument,       NULL, ARG_SMART_RELINQUISH_VAR },
                 { "sync",                 no_argument,       NULL, ARG_SYNC                 },
-                { "rotate",               no_argument,       NULL, ARG_ROTATE               },
+                { "rotate",               no_argument,       NULL, ARG_ROTATE               },  /* XXX: --rotate */
                 { "vacuum-size",          required_argument, NULL, ARG_VACUUM_SIZE          },
                 { "vacuum-files",         required_argument, NULL, ARG_VACUUM_FILES         },
                 { "vacuum-time",          required_argument, NULL, ARG_VACUUM_TIME          },
@@ -1093,6 +1101,10 @@ static int run(int argc, char *argv[]) {
         setlocale(LC_ALL, "");
         log_setup();
 
+        /*
+         * XXX:
+         *  First parse the args
+         */
         r = parse_argv(argc, argv);
         if (r <= 0)
                 return r;
@@ -1124,9 +1136,16 @@ static int run(int argc, char *argv[]) {
                         return log_oom();
         }
 
+        /*
+         * XXX:
+         *  then do call function based on args
+         */
         switch (arg_action) {
 
         case ACTION_SHOW:
+                /* XXX: journalctl -k -n 10
+                 *      comes here
+                 */
                 return action_show(args);
 
         case ACTION_NEW_ID128:
@@ -1189,4 +1208,8 @@ static int run(int argc, char *argv[]) {
         }
 }
 
+/*
+ * XXX:
+ *  journal ctl main function is run
+ */
 DEFINE_MAIN_FUNCTION(run);

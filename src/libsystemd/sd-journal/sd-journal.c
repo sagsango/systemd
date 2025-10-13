@@ -2203,6 +2203,9 @@ fail:
         return r;
 }
 
+/*
+ * XXX: these are the serarch path for the journal object/struct
+ */
 static int add_search_paths(sd_journal *j) {
 
         static const char search_paths[] =
@@ -2217,6 +2220,10 @@ static int add_search_paths(sd_journal *j) {
         NULSTR_FOREACH(p, search_paths)
                 (void) add_root_directory(j, p, true);
 
+        /* XXX:
+         *  If we are doing search on the whole journal
+         *  then remote journals are inclusded too
+         */
         if (!(j->flags & SD_JOURNAL_LOCAL_ONLY))
                 (void) add_root_directory(j, "/var/log/journal/remote", true);
 
@@ -2260,9 +2267,17 @@ static int allocate_inotify(sd_journal *j) {
         return 0;
 }
 
+/*
+ * XXX:
+ *  Create new journal object
+ */
 static sd_journal *journal_new(int flags, const char *path, const char *namespace) {
         _cleanup_(sd_journal_closep) sd_journal *j = NULL;
 
+       /*
+        * XXX: journalctl -k -n 10
+        *      comes here 5
+        */
         j = new(sd_journal, 1);
         if (!j)
                 return NULL;
@@ -2298,8 +2313,10 @@ static sd_journal *journal_new(int flags, const char *path, const char *namespac
         if (!j->files)
                 return NULL;
 
+        /* XXX: It has file cache ? too */
         j->files_cache = ordered_hashmap_iterated_cache_new(j->files);
-        j->mmap = mmap_cache_new();
+        /* XXX: It has one mmap cache too */
+        j->mmap = mmap_cache_new(); 
         if (!j->files_cache || !j->mmap)
                 return NULL;
 
@@ -2322,6 +2339,10 @@ _public_ int sd_journal_open_namespace(sd_journal **ret, const char *namespace, 
         assert_return(ret, -EINVAL);
         assert_return((flags & ~OPEN_ALLOWED_FLAGS) == 0, -EINVAL);
 
+       /*
+        * XXX: journalctl -k -n 10
+        *      comes here 4
+        */
         j = journal_new(flags, NULL, namespace);
         if (!j)
                 return -ENOMEM;

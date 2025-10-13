@@ -150,6 +150,14 @@ static int seek_journal(Context *c) {
         return 0;
 }
 
+/*
+ * XXX:
+ *  show() is the function responsible for displaying log entries from the journal
+ *  according to the options passed to journalctl. Think of it as the core “rendering engine”
+ *  of journalctl.
+ *
+ *  Take the Context *, and returns the number of lines shown (write to fd 1)
+ */
 static int show(Context *c) {
         sd_journal *j = ASSERT_PTR(ASSERT_PTR(c)->journal);
         int r, n_shown = 0;
@@ -167,6 +175,9 @@ static int show(Context *c) {
                 size_t highlight[2] = {};
 
                 if (c->need_seek) {
+                        /* XXX:
+                         *  we show the logs one at a time in reverse order
+                         */
                         r = sd_journal_step_one(j, !arg_reverse);
                         if (r < 0)
                                 return log_error_errno(r, "Failed to iterate through journal: %m");
@@ -495,6 +506,9 @@ int action_show(char **matches) {
 
         (void) signal(SIGWINCH, columns_lines_cache_reset);
 
+       /* XXX: journalctl -k -n 10
+        *      comes here 2
+        */
         r = acquire_journal(&c.journal);
         if (r < 0)
                 return r;
@@ -512,6 +526,10 @@ int action_show(char **matches) {
 
         /* Opening the fd now means the first sd_journal_wait() will actually wait */
         if (arg_follow) {
+            /*
+             * XXX:
+             *  actually opening the journal
+             */
                 poll_fd = sd_journal_get_fd(c.journal);
                 if (poll_fd == -EMFILE) {
                         log_warning_errno(poll_fd, "Insufficient watch descriptors available. Reverting to -n.");

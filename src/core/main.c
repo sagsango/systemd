@@ -3000,6 +3000,10 @@ static int save_env(void) {
         return 0;
 }
 
+/*
+ * XXX:
+ *  init/systemd main function
+ */
 int main(int argc, char *argv[]) {
         dual_timestamp
                 initrd_timestamp = DUAL_TIMESTAMP_NULL,

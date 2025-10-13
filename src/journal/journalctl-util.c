@@ -53,9 +53,12 @@ int acquire_journal(sd_journal **ret) {
 
                 if (!isempty(u) && !streq(u, "root"))
                         return log_error_errno(SYNTHETIC_ERRNO(EOPNOTSUPP), "Connecting to a machine as non-root is not supported.");
-
                 r = journal_open_machine(&j, h ?: ".host", arg_journal_additional_open_flags);
         } else
+               /* 
+                * XXX: journalctl -k -n 10
+                *      comes here 3
+                */ 
                 r = sd_journal_open_namespace(
                                 &j,
                                 arg_namespace,
