@@ -276,6 +276,10 @@ static int manager_get_file_flags(Manager *m, bool seal) {
                JOURNAL_STRICT_ORDER;
 }
 
+/*
+ * XXX:
+ *  Open a journal file
+ */
 static int manager_open_journal(
                 Manager *m,
                 bool reliably,
@@ -552,6 +556,11 @@ static JournalFile* manager_find_journal(Manager *m, uid_t uid) {
         return m->system_journal;
 }
 
+/*
+ *
+ * XXX:
+ *  Rotation utinily
+ */
 static int manager_do_rotate(
                 Manager *m,
                 JournalFile **f,
@@ -950,6 +959,10 @@ static bool shall_try_append_again(JournalFile *f, int r) {
         }
 }
 
+/*
+ * XXX:
+ *  writeing to journal
+ */
 static void manager_write_to_journal(
                 Manager *m,
                 uid_t uid,
@@ -1493,6 +1506,10 @@ int manager_relinquish_var(Manager *m) {
         return 0;
 }
 
+/*
+ * XXX:
+ *  Raw datagram process
+ */
 int manager_process_datagram(
                 sd_event_source *es,
                 int fd,
@@ -1593,6 +1610,14 @@ int manager_process_datagram(
                 }
         }
 
+        /*
+         * XXX:
+         *  Datagram can be 
+         *      syslog_message
+         *      native_message
+         *      native_file
+         *      audit_message
+         */
         /* And a trailing NUL, just in case */
         m->buffer[n] = 0;
 
@@ -2676,6 +2701,12 @@ int manager_new(Manager **ret, const char *namespace) {
         return 0;
 }
 
+/*
+ * XXX:
+ *  Here we open the journald listeing socket /dev/log
+ *  And open journakmsg socketsl files
+ *  Open /dev/kmsg device
+ */
 int manager_init(Manager *m) {
         const char *native_socket, *syslog_socket, *stdout_socket, *varlink_socket, *e;
         _cleanup_fdset_free_ FDSet *fds = NULL;

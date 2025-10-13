@@ -322,6 +322,10 @@ static int syslog_skip_timestamp(const char **buf) {
         return p - t;
 }
 
+/*
+ * XXX:
+ *  Process the raw received syslog message
+ */
 void manager_process_syslog_message(
                 Manager *m,
                 const char *buf,
@@ -473,6 +477,10 @@ void manager_process_syslog_message(
         manager_dispatch_message(m, iovec, n, mm, context, tv, priority, 0);
 }
 
+/*
+ * XXX:
+ *  Opening the syslog socket
+ */
 int manager_open_syslog_socket(Manager *m, const char *syslog_socket) {
         int r;
 
@@ -521,6 +529,10 @@ int manager_open_syslog_socket(Manager *m, const char *syslog_socket) {
         if (r < 0)
                 return log_error_errno(r, "Failed to enable SO_TIMESTAMP: %m");
 
+        /*
+         * XXX:
+         *  We process the datagram event based
+         */
         r = sd_event_add_io(m->event, &m->syslog_event_source, m->syslog_fd, EPOLLIN, manager_process_datagram, m);
         if (r < 0)
                 return log_error_errno(r, "Failed to add syslog sevrer fd to event loop: %m");

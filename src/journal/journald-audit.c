@@ -540,6 +540,11 @@ int manager_open_audit(Manager *m) {
         if (r < 0)
                 return log_error_errno(r, "Failed to set SO_PASSCRED on audit socket: %m");
 
+        /*
+         *
+         * XXX:
+         *  We process the datagram message event based
+         */
         r = sd_event_add_io(m->event, &m->audit_event_source, m->audit_fd, EPOLLIN, manager_process_datagram, m);
         if (r < 0)
                 return log_error_errno(r, "Failed to add audit fd to event loop: %m");

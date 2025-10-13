@@ -500,6 +500,11 @@ static void source_io_unregister(sd_event_source *s) {
         s->io.registered = false;
 }
 
+/*
+ *
+ * XXX:
+ *  Here we do epoll on the listing fd's
+ */
 static int source_io_register(
                 sd_event_source *s,
                 int enabled,
@@ -1231,6 +1236,13 @@ static int io_exit_callback(sd_event_source *s, int fd, uint32_t revents, void *
         return sd_event_exit(sd_event_source_get_event(s), PTR_TO_INT(userdata));
 }
 
+/*
+ *
+ * XXX:
+ *  Wenever something comes up in this fd
+ *  we will call the even handler which is manager_process_datagram()
+ *  see the callers of this function
+ */
 _public_ int sd_event_add_io(
                 sd_event *e,
                 sd_event_source **ret,

@@ -56,6 +56,11 @@ static int run(int argc, char *argv[]) {
         if (r < 0)
                 return log_oom();
 
+        /*
+         * XXX:
+         * Open listening socket /dev/log
+         * Open journal files (database)
+         * Open kernel ring buffer /dev/kmsg, to read kernel logs
         r = manager_init(m);
         if (r < 0)
                 return r;

@@ -499,6 +499,10 @@ int manager_open_native_socket(Manager *m, const char *native_socket) {
         if (r < 0)
                 return log_error_errno(r, "SO_TIMESTAMP failed: %m");
 
+        /*
+         * XXX: 
+         *  We process the datagram event based
+         */
         r = sd_event_add_io(m->event, &m->native_event_source, m->native_fd, EPOLLIN, manager_process_datagram, m);
         if (r < 0)
                 return log_error_errno(r, "Failed to add native manager fd to event loop: %m");
