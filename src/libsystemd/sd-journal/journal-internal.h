@@ -66,6 +66,10 @@ typedef struct NewestByBootId {
         Prioq *prioq; /* JournalFile objects ordered by monotonic timestamp of last update. */
 } NewestByBootId;
 
+/*
+ * XXX:
+ *  This is a journal object
+ */
 typedef struct sd_journal {
         int toplevel_fd;
 
@@ -75,7 +79,7 @@ typedef struct sd_journal {
 
         OrderedHashmap *files;
         IteratedCache *files_cache;
-        MMapCache *mmap;
+        MMapCache *mmap;    /* XXX: Have cache */
 
         /* a bisectable array of NewestByBootId, ordered by boot id. */
         NewestByBootId *newest_by_boot_id;
@@ -102,7 +106,7 @@ typedef struct sd_journal {
         uint64_t unique_offset;
 
         /* Iterating through known fields */
-        JournalFile *fields_file;
+        JournalFile *fields_file;   /* XXX: Have journal file */
         uint64_t fields_offset;
         uint64_t fields_hash_table_index;
         char *fields_buffer;
