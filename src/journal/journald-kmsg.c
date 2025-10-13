@@ -1,5 +1,43 @@
 /* SPDX-License-Identifier: LGPL-2.1-or-later */
 
+/* XXX:
+journald-kmsg.c is responsible for reading kernel log messages from the kernel ring buffer (/dev/kmsg device) 
+and forwarding them into the systemd journal. This enables persistent, queryable kernel logs using journalctl -k.
+
+Key Responsibilities:
+1. Open /dev/kmsg:
+   Access the kernel message buffer as a character device.
+   File descriptor is opened in non-blocking mode.
+
+2. Read kernel messages:
+   Messages include metadata: sequence number, timestamp, priority, facility, and log text.
+   Parsing is done to extract these fields.
+
+3. Wrap messages as journal entries:**
+   Fields added include:
+     _TRANSPORT=kernel (marks message as kernel origin)
+     PRIORITY=<priority> (syslog priority)
+     MESSAGE=<log text>
+     Messages are stored in binary journal files (/run/log/journal or /var/log/journal).
+
+4. Integration with journald main loop:
+   Registers /dev/kmsg with the event loop (using sd-event or epoll) to receive notifications of new messages.
+   Each new kernel message is immediately appended to the journal.
+
+Key Functions:
+server_open_kernel_log() – opens /dev/kmsg.
+read_kmsg() – reads and parses kernel log messages.
+server_process_kmsg_message() – converts messages into journal entries.
+
+Significance:
+Enables journalctl -k and dmesg functionality through journald.
+Provides persistent, timestamped, and structured kernel logging integrated with systemd’s journal.
+_TRANSPORT=kernel field allows filtering only kernel-origin messages in journalctl.
+
+Summary:
+journald-kmsg.c is essentially the bridge between the kernel ring buffer and the systemd journal, ensuring that kernel messages are captured reliably, stored persistently, and made queryable alongside other system logs.
+*/
+
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/socket.h>
