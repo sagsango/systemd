@@ -278,3 +278,177 @@ Kernel → /sbin/hotplug
 |     (2011+) | inside systemd (`src/udev/`) | socket activation, Cgroups, etc.  |
 
 
+# Flowchart
+                              +----------------------------+
+                              |     Kernel (2.6)           |
+                              |  sysfs + hotplug           |
+                              +----------------------------+
+                                        |
+                                        | netlink/hotplug event
+                                        | ACTION=add/remove
+                                        | DEVPATH=/class/usb/host1
+                                        | SUBSYSTEM=usb
+                                        v
+                   +-------------------------------------------+
+                   | /etc/hotplug.d/default/udev.hotplug       |
+                   | (symlink → /sbin/udev)                    |
+                   +-------------------------------------------+
+                                        |
+                                        | execve("/sbin/udev", ["udev", "subsystem"], env)
+                                        v
+                   +-------------------------------------------+
+                   |                /sbin/udev                 |
+                   |             main() in udev.c              |
+                   +-------------------------------------------+
+                                        |
+                                        | 1. Check argc == 2 → subsystem = argv[1]
+                                        | 2. getenv("ACTION") → "add" or "remove"
+                                        | 3. getenv("DEVPATH") → e.g. "/class/usb/host1"
+                                        | 4. getenv("SEQNUM")
+                                        |
+                                        | Filter:
+                                        |   • Must contain "class" or "block"
+                                        |   • NOT subsystem "net"
+                                        |
+                                        v
+                   +-------------------------------------------+
+                   |             get_dirs()                    |
+                   | • Detect sysfs mount (/proc/mounts)       |
+                   | • Override via env:                       |
+                   |     UDEV_SYSFS_PATH, UDEV_ROOT, etc.      |
+                   | • Build paths:                            |
+                   |     udev_root = "/dev" (default)          |
+                   |     udev_db_filename = "/etc/udev/udev.tdb"|
+                   +-------------------------------------------+
+                                        |
+                                        v
+                   +-------------------------------------------+
+                   |          udevdb_init(UDEVDB_DEFAULT)      |
+                   |     → tdb_open("/etc/udev/udev.tdb")      |
+                   |       (Trivial Database - persistent)     |
+                   +-------------------------------------------+
+                                        |
+                 +-------------------------------+-----------------------+
+                 |                               |                       |
+                 v                               v                       v
+        ACTION="add"                   ACTION="remove"           unknown → exit(-EINVAL)
+                 |                               |
+                 v                               v
+        +----------------+             +-------------------------+
+        | udev_add_device()            | udev_remove_device()    |
+        | (udev-add.c)                 | (udev-remove.c)         |
+        +----------------+             +-------------------------+
+                 |                               |
+                 | 1. sleep_for_dev()            | 1. get_name(path,0,0)
+                 |    → wait up to 10s for       |    → lookup in TDB
+                 |       /sys/.../dev file        |       if found → dev->name
+                 |                               |       else → basename(DEVPATH)
+                 | 2. get_class_dev()            |
+                 |    → sysfs_open_class_device()|
+                 |                               | 2. udevdb_delete_dev(path)
+                 | 3. namedev_name_device()     |
+                 |    → parse /etc/udev/udev.config|
+                 |       matching rules:          | 3. delete_node(name)
+                 |         LABEL, NUMBER,          |    → unlink("/dev/name")
+                 |         TOPOLOGY, REPLACE       |
+                 |       → fills struct udevice   |
+                 |                               | 4. return
+                 | 4. get_major_minor()         |
+                 |    → read "dev" attribute      |
+                 |       (format "MAJOR:MINOR")    |
+                 |                               |
+                 | 5. udevdb_add_dev(path,&dev)  |
+                 |    → store in TDB (persistent) |
+                 |                               |
+                 | 6. create_node(&dev)          |
+                 |    → mknod("/dev/name", mode, dev_t)|
+                 |       mode |= S_IFBLK or S_IFCHR     |
+                 |       (uses __KLIBC__ hack if needed)|
+                 |                               |
+                 v                               v
+        +----------------+             +-------------------------+
+        |   return retval               |   return retval         |
+        +----------------+             +-------------------------+
+                                        |
+                                        v
+                   +-------------------------------------------+
+                   |            udevdb_exit()                  |
+                   |          → tdb_close()                    |
+                   +-------------------------------------------+
+                                        |
+                                        v
+                                   exit(retval)
+
+
+# Key Components & Data Flow (Detailed)
+Environment Variables used:
+├── ACTION         → "add" or "remove"
+├── DEVPATH        → sysfs path (e.g. /class/usb/host1)
+├── SEQNUM         → event sequence number
+├── UDEV_TEST      → if set, allow override of paths
+├── UDEV_ROOT      → /dev (default)
+├── UDEV_DB        → "udev.tdb"
+└── UDEV_CONFIG_FILE → "udev.config"
+
+Configuration Files:
+├── /etc/udev/udev.config       ← naming rules (example provided)
+├── /etc/udev/udev.permissions  ← (exists but not used in code yet)
+└── /etc/udev/udev.tdb          ← persistent TDB database
+
+Rule Types in udev.config (parsed by namedev.c):
+├── LABEL     → match vendor/model labels
+├── NUMBER    → match PCI/USB by bus id, assign numbered names
+├── TOPOLOGY  → match USB by port topology (hub.port)
+└── REPLACE   → direct KERNEL name override
+
+Database (TDB):
+Key   → DEVPATH string (null-terminated)
+Value → struct udevice {
+          char name[100];
+          char owner[30];
+          char group[30];
+          char type;      // 'b','c','u','p'
+          int major, minor;
+          mode_t mode;
+        }
+
+
+# Execution Example: USB Camera Inserted
+Kernel → hotplug → /sbin/udev usb
+   env: ACTION=add
+        DEVPATH=/class/usb_device/1234-5678
+        BUS=usb, vendor=FUJIFILM
+
+udev main()
+ └→ get_dirs() → udev_root="/dev"
+ └→ udevdb_init() → open /etc/udev/udev.tdb
+ └→ udev_add_device("/class/usb_device/1234-5678", "usb")
+      └→ sleep_for_dev() → wait for /sys/.../dev
+      └→ get_class_dev()
+      └→ namedev_name_device() → matches rule:
+           LABEL, BUS="usb", vendor="FUJIFILM", NAME="camera"
+           → dev.name = "camera"
+      └→ get_major_minor() → reads "dev" → 180:0
+      └→ udevdb_add_dev() → store in TDB
+      └→ create_node() → mknod("/dev/camera", S_IFCHR|0660, makedev(180,0))
+
+
+# Removal Example
+ACTION=remove → udev_remove_device()
+ └→ get_name() → TDB lookup → "camera"
+ └→ udevdb_delete_dev()
+ └→ unlink("/dev/camera")
+
+# Summary of This 2003 Design (Version 005)
+Pure userspace devfs replacement
+No udevd daemon — direct hotplug script execution
+No rule parser in main binary — namedev_name_device() does it
+Persistent database in /etc/udev/udev.tdb (TDB)
+Very small codebase (~1500 LOC total)
+Only handles class + block devices
+Ignores network devices
+Waits up to 10 seconds for dev attribute
+Supports 4 rule types: LABEL, NUMBER, TOPOLOGY, REPLACE
+Uses libsysfs heavily
+No permission handling yet (permissions file exists but unused)
+
