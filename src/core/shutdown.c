@@ -304,6 +304,7 @@ static int pivot_to_new_root(void) {
         return 0;
 }
 
+/* XXX: Flow of shutdown from userspace */
 int main(int argc, char *argv[]) {
         int cmd, r;
         unsigned retries;

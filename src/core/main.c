@@ -1170,6 +1170,7 @@ static void test_cgroups(void) {
         sleep(10);
 }
 
+/* XXX: Userspace starts here */
 int main(int argc, char *argv[]) {
         Manager *m = NULL;
         int r, retval = EXIT_FAILURE;
