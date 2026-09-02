@@ -1,3 +1,8 @@
+/* XXX: how to write a service which will
+	be monitored by the watchdog
+	so it has to feed the dogs
+*/
+
 /*-*- Mode: C; c-basic-offset: 8; indent-tabs-mode: nil -*-*/
 
 /***

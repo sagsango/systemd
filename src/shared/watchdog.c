@@ -1,3 +1,4 @@
+/* XXX: Thus 
 /*-*- Mode: C; c-basic-offset: 8; indent-tabs-mode: nil -*-*/
 
 /***
